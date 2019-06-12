@@ -1,6 +1,9 @@
 # taken from https://github.com/huggingface/pytorch-pretrained-BERT/tree/master/examples/lm_finetuning
+import spacy
 from argparse import ArgumentParser
 from pathlib import Path
+from typing import Callable, List
+
 from tqdm import tqdm, trange
 from tempfile import TemporaryDirectory
 import shelve
@@ -265,6 +268,93 @@ def create_instances_from_document(
     return instances
 
 
+def default_document_loader(docs: DocumentDatabase, train_corpus: Path, tokenizer: Callable[[str], List[str]]) -> None:
+    """
+    The default document loader expects one file that contains multiple documents separated by blank lines. Each
+    document has to have one sentence per line.
+
+    :param docs: a DocumentDatabase
+    :param train_corpus: a (file) Path
+    :param tokenizer: a callable that tokenizes a string into a list of strings
+    """
+    with train_corpus.open() as f:
+        doc = []
+        for line in tqdm(f, desc="Loading Dataset", unit=" lines"):
+            line = line.strip()
+            if line == "":
+                docs.add_document(doc)
+                doc = []
+            else:
+                tokens = tokenizer(line)
+                doc.append(tokens)
+        if doc:
+            docs.add_document(doc)  # If the last doc didn't end on a newline, make sure it still gets added
+    if len(docs) <= 1:
+        exit("ERROR: No document breaks were found in the input file! These are necessary to allow the script to "
+             "ensure that random NextSentences are not sampled from the same document. Please add blank lines to "
+             "indicate breaks between documents in your input file. If your dataset does not contain multiple "
+             "documents, blank lines can be inserted at any natural boundary, such as the ends of chapters, "
+             "sections or paragraphs.")
+
+
+def coqa_document_loader(docs: DocumentDatabase, train_corpus: Path,
+                         tokenizer: Callable[[str], List[str]],
+                         story_marker_token: str='[unused0]',
+                         question_marker_token: str='[unused1]',
+                         answer_marker_token: str = '[unused2]') -> None:
+    """
+    The CoQA document loader expects a json file in the format of the CoQA dataset,
+    see https://stanfordnlp.github.io/coqa/
+
+    :param docs: a DocumentDatabase
+    :param train_corpus: a (file) Path
+    :param tokenizer: a callable that tokenizes a string into a list of strings
+    :param answer_marker_token: special token used to mark the beginning of the story content
+    :param question_marker_token: special token used to mark the beginning of a question
+    :param story_marker_token: special token used to mark the beginning of a answer
+    """
+
+    def list_to_dict(l, k):
+        # convert a list l of dicts to a dict of dicts using k as key
+        return {e[k]: e for e in l}
+
+    nlp = spacy.load('en_core_web_sm')
+    nlp.add_pipe(nlp.create_pipe('sentencizer'))
+
+    with train_corpus.open() as f:
+        data = json.load(f)
+        for record in tqdm(data['data'], desc="Loading Dataset", unit=' records'):
+            doc = []
+            # story tokens
+            # split sentences
+            story = nlp(record['story'].strip(), disable=['parser', 'tagger', 'ner'])
+            for sent in story.sents:
+                sent_tokens = tokenizer(sent.text.strip())
+                # prepend story marker only to first sentence
+                if len(doc) == 0:
+                    doc.append([story_marker_token] + sent_tokens)
+                else:
+                    doc.append(sent_tokens)
+
+            questions_dict = list_to_dict(record['questions'], k='turn_id')
+            answers_dict = list_to_dict(record['answers'], k='turn_id')
+            turn_ids = sorted(questions_dict.keys())
+            assert turn_ids == sorted(answers_dict.keys()), 'turn_ids of questions [%s] and answers [%s] do not match' \
+                                                            % (str(turn_ids), str(sorted(answers_dict.keys())))
+            for turn_id in turn_ids:
+                # question tokens
+                question = questions_dict[turn_id]['input_text'].strip()
+                doc.append([question_marker_token] + tokenizer(question))
+                # answer tokens
+                answer = answers_dict[turn_id]['input_text'].strip()
+                doc.append([answer_marker_token] + tokenizer(answer))
+
+            docs.add_document(doc)
+
+    if len(docs) < 1:
+        exit("ERROR: No CoQA documents found in %s." % train_corpus)
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument('--train_corpus', type=Path, required=True)
@@ -272,6 +362,8 @@ def main():
     parser.add_argument("--bert_model", type=str, required=True,
                         choices=["bert-base-uncased", "bert-large-uncased", "bert-base-cased",
                                  "bert-base-multilingual", "bert-base-chinese"])
+    parser.add_argument("--document_loader", type=str, default="default_document_loader",
+                        choices=["default_document_loader", "coqa_document_loader"])
     parser.add_argument("--do_lower_case", action="store_true")
     parser.add_argument("--do_whole_word_mask", action="store_true",
                         help="Whether to use whole word masking rather than per-WordPiece masking.")
@@ -292,25 +384,9 @@ def main():
 
     tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
     vocab_list = list(tokenizer.vocab.keys())
+    document_loader = globals()[args.document_loader]
     with DocumentDatabase(reduce_memory=args.reduce_memory) as docs:
-        with args.train_corpus.open() as f:
-            doc = []
-            for line in tqdm(f, desc="Loading Dataset", unit=" lines"):
-                line = line.strip()
-                if line == "":
-                    docs.add_document(doc)
-                    doc = []
-                else:
-                    tokens = tokenizer.tokenize(line)
-                    doc.append(tokens)
-            if doc:
-                docs.add_document(doc)  # If the last doc didn't end on a newline, make sure it still gets added
-        if len(docs) <= 1:
-            exit("ERROR: No document breaks were found in the input file! These are necessary to allow the script to "
-                 "ensure that random NextSentences are not sampled from the same document. Please add blank lines to "
-                 "indicate breaks between documents in your input file. If your dataset does not contain multiple "
-                 "documents, blank lines can be inserted at any natural boundary, such as the ends of chapters, "
-                 "sections or paragraphs.")
+        document_loader(docs=docs, train_corpus=args.train_corpus, tokenizer=tokenizer.tokenize)
 
         args.output_dir.mkdir(exist_ok=True)
         for epoch in trange(args.epochs_to_generate, desc="Epoch"):

@@ -29,6 +29,13 @@ There are various options that can be tweaked, but they are mostly set to the va
 
 In addition, if memory usage is an issue, especially when training on a single GPU, reducing `--train_batch_size` from the default 32 to a lower number (4-16) can be helpful, or leaving `--train_batch_size` at the default and increasing `--gradient_accumulation_steps` to 2-8. Changing `--gradient_accumulation_steps` may be preferable as alterations to the batch size may require corresponding changes in the learning rate to compensate. There is also a `--reduce_memory` option for both the `pregenerate_training_data.py` and `finetune_on_pregenerated.py` scripts that spills data to disc in shelf objects or numpy memmaps rather than retaining it in memory, which significantly reduces memory usage with little performance impact.
 
+### Requirements
+* python packages: pytorch-pretrained-BERT, spacy (install via `conda install pytorch-pretrained-BERT spacy`)
+* spacy model: en_core_web_sm (install via `python -m spacy download en_core_web_sm`)
+
+SpaCy is just required for CoQA preprocessing (sentence splitting).
+
+
 ## Examples
 
 ### Simple fine-tuning
