@@ -7,7 +7,7 @@ MODEL_OUT_DIR=models/coqa/bert-base-uncased/
 
 # use first argument as GPU devices, if available
 if [ -n "$1" ]; then
-    PY=CUDA_VISIBLE_DEVICES=$1 python
+    PY=CUDA_VISIBLE_DEVICES="$1" python
     echo "use CUDA_VISIBLE_DEVICES=$1"
 else
     PY=python
