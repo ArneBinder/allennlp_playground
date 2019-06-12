@@ -4,6 +4,7 @@ import re
 
 import spacy
 import plac
+from pytorch_pretrained_bert import BertTokenizer
 
 logger = logging.getLogger()
 ch = logging.StreamHandler()
@@ -33,8 +34,22 @@ def coqa_to_lm(file_name_in: ('input file name', 'option', 'i', str),
             f.write('\n')
 
 
+def extract_bert_vocab(bert_model ='bert-base-uncased'):
+    tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=True)
+    print('loaded BERT tokenizer.')
+    vocab_fn = 'models/vocab/%s.txt' % bert_model
+    print('write vocab to: %s' % vocab_fn)
+    open(vocab_fn, 'w').writelines((t + '\n' for t in tokenizer.vocab.keys()))
+
+    if False:
+        s = 'Once upon a time, in a barn near a farm house, there lived a little white kitten named Cotton.'
+        print('loaded BERT tokenizer. tokenize: \n"%s"' % s)
+        tokens = tokenizer.tokenize(s)
+        print(tokens)
+    print('done')
+
+
 if __name__ == '__main__':
     plac.call(coqa_to_lm)
+    #extract_bert_vocab()
 
-              #(file_name_in='/mnt/DATA/ML/data/corpora/QA/CoQA/coqa-dev-v1.0.json',
-              # file_name_out='/mnt/DATA/ML/data/corpora/QA/CoQA/stories_only/coqa-dev-v1.0.txt')
