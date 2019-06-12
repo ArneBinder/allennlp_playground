@@ -11,7 +11,7 @@ wget https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA
 echo "create conda environment with required packages (pytorch-pretrained-bert and spacy): $CONDA_ENV ..."
 conda create -n $CONDA_ENV -c conda-forge python=3 pytorch-pretrained-bert spacy
 echo "activate conda environment: $CONDA_ENV"
-source activate $CONDA_ENV
+conda activate $CONDA_ENV
 echo "download spacy model ..."
 python -m spacy download en_core_web_sm
 
