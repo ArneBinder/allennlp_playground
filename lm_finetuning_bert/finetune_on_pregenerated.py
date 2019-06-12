@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, Dataset, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
-from pytorch_pretrained_bert.modeling import BertForPreTraining
+from pytorch_pretrained_bert.modeling import BertForPreTraining, BERT_CONFIG_NAME
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
 
@@ -231,6 +231,10 @@ def main():
 
     # Prepare model
     model = BertForPreTraining.from_pretrained(args.bert_model)
+    model_config_file = args.output_dir / BERT_CONFIG_NAME
+    model.config.to_json_file(model_config_file)
+    logging.info("saved config to %s" % model_config_file)
+
     if args.fp16:
         model.half()
     model.to(device)
