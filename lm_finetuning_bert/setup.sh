@@ -8,8 +8,8 @@ echo "download CoQA train data: https://nlp.stanford.edu/data/coqa/$COQA_TRAINDA
 cd $COQA_PATH
 wget https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA
 
-echo "create conda environment with required packages (pytorch-pretrained-bert and spacy): $CONDA_ENV ..."
-conda create -n $CONDA_ENV -c conda-forge python=3 pytorch-pretrained-bert spacy
+echo "create conda environment with required packages (pytorch-pretrained-bert, pytorch and spacy): $CONDA_ENV ..."
+conda create -n $CONDA_ENV -c conda-forge -c pytorch python=3 "blas=*=mkl" pytorch-pretrained-bert pytorch spacy
 echo "activate conda environment: $CONDA_ENV"
 conda activate $CONDA_ENV
 echo "download spacy model ..."
