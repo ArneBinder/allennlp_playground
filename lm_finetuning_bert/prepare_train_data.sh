@@ -1,7 +1,7 @@
 #!/bin/sh
 
-$COQA_TRAIN_DATA=/home/abinder/datasets/CoQA/coqa-train-v1.0.json
-$TRAIN_PATH=training/coqa/
+COQA_TRAIN_DATA=/home/abinder/datasets/CoQA/coqa-train-v1.0.json
+TRAIN_PATH=training/coqa/
 
 #cd allennlp_playground
 # generate CoQA training data
