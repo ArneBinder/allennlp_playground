@@ -1,12 +1,17 @@
 #!/bin/sh
 
-COQA_TRAINDATA_PATH=/mnt/DATA/ML/data/corpora/QA/CoQA/coqa-train-v1.0.json
+COQA_TRAINDATA=coqa-train-v1.0.json
+COQA_PATH=/home/abinder/datasets/CoQA/
+CONDA_ENV=allennlp_playground
 
-# create conda environment with required packages
-conda create -n allennlp_playground -c allennlp python=3 pytorch-pretrained-bert spacy
-# activate conda environment
-source activate allennlp_playground
-# download spacy model
+echo "download CoQA train data: https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA ..."
+wget https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA
+
+echo "create conda environment with required packages (pytorch-pretrained-bert and spacy): $CONDA_ENV ..."
+conda create -n $CONDA_ENV -c conda-forge python=3 pytorch-pretrained-bert spacy
+echo "activate conda environment: $CONDA_ENV"
+source activate $CONDA_ENV
+echo "download spacy model ..."
 python -m spacy download en_core_web_sm
 
 # move into directory
