@@ -305,13 +305,15 @@ def coqa_document_loader(docs: DocumentDatabase, train_corpus: Path,
     """
     The CoQA document loader expects a json file in the format of the CoQA dataset,
     see https://stanfordnlp.github.io/coqa/
+    Three special marker tokens are added: story_marker_token marks the beginning of the story content,
+    question_marker_token marks the beginning of a question and answer_marker_token marks the beginning of an answer.
 
     :param docs: a DocumentDatabase
     :param train_corpus: a (file) Path
     :param tokenizer: a callable that tokenizes a string into a list of strings
     :param answer_marker_token: special token used to mark the beginning of the story content
     :param question_marker_token: special token used to mark the beginning of a question
-    :param story_marker_token: special token used to mark the beginning of a answer
+    :param story_marker_token: special token used to mark the beginning of an answer
     """
 
     def list_to_dict(l, k):
