@@ -4,7 +4,8 @@ COQA_TRAINDATA=coqa-train-v1.0.json
 COQA_PATH=/home/abinder/datasets/CoQA/
 CONDA_ENV=allennlp_playground
 
-echo "download CoQA train data: https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA ..."
+echo "download CoQA train data: https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA to $COQA_PATH ..."
+cd $COQA_PATH
 wget https://nlp.stanford.edu/data/coqa/$COQA_TRAINDATA
 
 echo "create conda environment with required packages (pytorch-pretrained-bert and spacy): $CONDA_ENV ..."
