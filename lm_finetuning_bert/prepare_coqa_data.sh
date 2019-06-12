@@ -11,7 +11,7 @@ TRAIN_PATH=training/coqa/$BERT_MODEL/
 
 #cd allennlp_playground
 # generate CoQA training data
-mkdir -p $TRAIN_PATH/$BERT_MODEL
+mkdir -p $TRAIN_PATH
 echo "prepare training data with: $COQA_TRAIN_DATA and write to: $TRAIN_PATH"
 python lm_finetuning_bert/pregenerate_training_data.py \
 --train_corpus $COQA_TRAIN_DATA \
